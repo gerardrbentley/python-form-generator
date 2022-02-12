@@ -34,3 +34,39 @@ git remote add origin git@github.com:gerardrbentley/python-form-generator.git
 git add .
 git commit -m "skeleton"
 ```
+
+### Install
+
+We'll plan on 4 main packages for this:
+
+- `streamlit`
+- `pydantic`
+- `streamlit-pydantic`
+- `datamodel-code-generator`
+
+```sh
+python -m venv venv
+. ./venv/bin/activate
+pip install streamlit-pydantic datamodel-code-generator
+pip list | grep "streamlit\|pydantic\|datamodel-code"
+```
+
+*Note:* This lets `streamlit-pydantic` to choose which versions of `streamlit` and `pydantic` work for the latest release.
+
+Saving the output to `requirements.txt` in the format:
+
+```txt
+datamodel-code-generator==0.11.19
+pydantic==1.9.0
+streamlit==1.5.1
+streamlit-pydantic==0.5.0
+```
+
+Saving the output to requirements.txt allows new users / deploys to install pinned verions with something like the following:
+
+`pip install -r requirements.txt`
+
+```sh
+git add requirements.txt README.md
+git commit -m "install"
+```
