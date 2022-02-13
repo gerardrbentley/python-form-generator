@@ -275,3 +275,16 @@ Testing out the download and run on our simple model yields great results!
 git add app.py README.md
 git commit -m "app generation"
 ```
+
+### Wrap Up
+
+That's it for the basic idea!
+
+Next steps would be allowing configuration options such as "all Optional" and snake casing akin to JSON to Pydantic.
+Also more input forms, as Datamodel code generator handles OpenAPI, CSV data, and more.
+
+```sh
+git add README.md
+git commit -m "lgtm!"
+git push origin main
+```
