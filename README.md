@@ -30,6 +30,7 @@ mkdir python-form-generator
 cd python-form-generator/
 touch README.md LICENSE .gitignore app.py requirements.txt
 git init
+git checkout -b main
 git remote add origin git@github.com:gerardrbentley/python-form-generator.git
 git add .
 git commit -m "skeleton"
@@ -100,4 +101,108 @@ streamlit run app.py
 ```sh
 git add app.py README.md
 git commit -m "input hello world"
+```
+
+### Model Generation
+
+We'll draw from 3 sources for the meat and potatoes of this app:
+
+- [Streamlit Pydantic Usage Guide](https://github.com/LukasMasuch/streamlit-pydantic#usage)
+- [Datamodel Code Generator conversion](https://github.com/koxudaxi/datamodel-code-generator/blob/381abc1946c088c99dc79bebc62b7e37a2d4b8d3/datamodel_code_generator/__init__.py#L311)
+- [JSON to Pydantic conversion](https://github.com/brokenloop/jsontopydantic/blob/master/server/app/scripts/generator.py)
+
+#### Imports
+
+Expand import section of `app.py` to accomodate Streamlit Pydantic, Datamodel code generator, and GenSON
+
+(Datamodel code generator is intended as CLI tool, so we have to dig a bit into it)
+
+```py
+import json
+
+from pydantic import Json, BaseModel
+from datamodel_code_generator.parser.jsonschema import JsonSchemaParser
+from genson import SchemaBuilder
+import streamlit as st
+import streamlit_pydantic as sp
+```
+
+#### Upgraded Input
+
+We'll use Streamlit Pydantic to get out of the box validation of the JSON that the user provides. 
+Plus we get extensibility via the FormModel if we want to add more configuration options!
+
+Instead of a plain `text_input` from streamlit, we utilize `sp.pydantic_form` and provide our model (which only has 1 input field for now!)
+
+After getting some input JSON from the User it will pass off to converting to a model.
+
+```py
+class FormGeneratorModel(BaseModel):
+    model_schema: Json
+
+
+def main() -> None:
+    st.header("Python Form Generator")
+    st.subheader(
+        "Enter your JSON and get a free Pydantic model + Streamlit Input Form using it!"
+    )
+    data = sp.pydantic_form(key="json_input", model=FormGeneratorModel)
+    if data:
+        show_generated_code(data.model_schema)
+```
+
+#### Conversion
+
+Following in the footsteps of JSON to Pydantic and Datamodel Code Generator, we use GenSON to build a JSONSchema representation from raw JSON data, then dump that into the Datamodel Code Generator parser.
+
+We'll handle the same error case Datamodel code generator does, otherwise assume the happy path and display the results!
+
+```py
+def show_generated_code(schema: Json) -> None:
+    model_code = json_to_pydantic(schema)
+
+    if not model_code:
+        st.error("Models not found in the input data")
+    else:
+        st.code(model_code)
+
+
+def json_to_pydantic(input_text: str) -> str:
+    builder = SchemaBuilder()
+    builder.add_object(input_text)
+    schema = builder.to_schema()
+    parser = JsonSchemaParser(
+        source=json.dumps(schema),
+        base_class="pydantic.BaseModel",
+    )
+
+    return parser.parse()
+```
+
+#### LGTM
+
+Trying out a simple entry (even simpler than the [littlest fullstack app](https://streamlit-postgres.gerardbentley.com/)) such as the following:
+
+```txt
+{"body": ":tada:", "username": ":cat:"}
+```
+
+Produces expected result
+
+```py
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    body: str
+    username: str
+```
+
+Time to ship it and generate a Form!
+
+```sh
+git add app.py README.md
+git commit -m "model generation"
 ```
