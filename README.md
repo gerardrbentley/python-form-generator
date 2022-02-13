@@ -206,3 +206,72 @@ Time to ship it and generate a Form!
 git add app.py README.md
 git commit -m "model generation"
 ```
+
+### Bootstrapping
+
+Alright, we've got a nice Pydantic model, time to generate a Streamlit Pydantic scaffold from it and provide a download link.
+
+#### Update Show Model
+
+We'll allow the user to download just the model into a `.py` file and hide the generated model unless they want to see it.
+
+```py
+def show_generated_code(schema: Json) -> None:
+    model_code = json_to_pydantic(schema)
+
+    if not model_code:
+        st.error("Models not found in the input data")
+    else:
+        with st.expander("Original Converted Model"):
+            st.code(model_code, language="python")
+        st.download_button("Download Generated Model Only", data=model_code, file_name="model.py", mime="text/plain")
+        show_generated_form(model_code)
+```
+
+#### Inject Generated Code
+
+We only need 2 features to really bootstrap these forms:
+
+- Added imports
+- Retrieve form data in Streamlit app
+
+I'll add a `main()` method to keep scope contained, but the Streamlit execution model embraces all [Python scripting](https://streamlit.io/)
+
+```py
+MAIN_TEMPLATE = """\
+
+
+def main() -> None:
+    st.header("Model Form Submission")
+    data = sp.pydantic_form(key="my_model", model=Model)
+    if data:
+        st.json(data.json())
+
+
+if __name__ == "__main__":
+    main()
+"""
+
+def show_generated_form(model_code: str) -> None:
+    code_lines = model_code.split('\n')
+    code_lines.insert(2, "import streamlit_pydantic as sp")
+    code_lines.insert(2, "import streamlit as st")
+
+    code_lines.insert(-1, MAIN_TEMPLATE)
+
+    full_code = '\n'.join(code_lines)
+
+    st.subheader("Generated Streamlit Pydantic App")
+    st.caption("Download it and run with `streamlit run model_form.py`")
+    st.download_button("Download Generated Form!", data=full_code, file_name="model_form.py", mime="text/plain")
+    st.code(full_code, language="python")
+```
+
+#### LGTM
+
+Testing out the download and run on our simple model yields great results!
+
+```sh
+git add app.py README.md
+git commit -m "app generation"
+```

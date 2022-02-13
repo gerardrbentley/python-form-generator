@@ -27,7 +27,38 @@ def show_generated_code(schema: Json) -> None:
     if not model_code:
         st.error("Models not found in the input data")
     else:
-        st.code(model_code)
+        with st.expander("Original Converted Model"):
+            st.code(model_code, language="python")
+        st.download_button("Download Generated Model Only", data=model_code, file_name="model.py", mime="text/plain")
+        show_generated_form(model_code)
+
+MAIN_TEMPLATE = """\
+
+
+def main() -> None:
+    st.header("Model Form Submission")
+    data = sp.pydantic_form(key="my_model", model=Model)
+    if data:
+        st.json(data.json())
+
+
+if __name__ == "__main__":
+    main()
+"""
+
+def show_generated_form(model_code: str) -> None:
+    code_lines = model_code.split('\n')
+    code_lines.insert(2, "import streamlit_pydantic as sp")
+    code_lines.insert(2, "import streamlit as st")
+
+    code_lines.insert(-1, MAIN_TEMPLATE)
+
+    full_code = '\n'.join(code_lines)
+
+    st.subheader("Generated Streamlit Pydantic App")
+    st.caption("Download it and run with `streamlit run model_form.py`")
+    st.download_button("Download Generated Form!", data=full_code, file_name="model_form.py", mime="text/plain")
+    st.code(full_code, language="python")
 
 
 def json_to_pydantic(input_text: str) -> str:
